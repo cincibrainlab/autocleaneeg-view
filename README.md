@@ -18,6 +18,31 @@ pip install autoclean-view
 autoclean-view path/to/yourfile.set --view
 ```
 
+## Test with Simulated Data
+The package includes scripts to generate and test with simulated EEG data:
+
+1. Generate simulated data:
+   ```bash
+   python scripts/generate_test_data.py --output data/simulated_eeg.set
+   ```
+
+2. Or run the all-in-one test script:
+   ```bash
+   ./scripts/test_with_simulated_data.sh
+   ```
+
+### Simulation Options
+```
+python scripts/generate_test_data.py --help
+```
+
+Options include:
+- `--duration`: Length of simulated recording (seconds)
+- `--sfreq`: Sampling frequency (Hz)
+- `--channels`: Number of EEG channels
+- `--no-events`: Disable simulated events
+- `--no-artifacts`: Disable simulated artifacts
+
 ## Requirements
 - Python 3.9+
 - macOS or Linux
