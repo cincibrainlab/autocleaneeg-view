@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autoclean-view"
+version = "0.1.0"
+description = "A lightweight tool for viewing EEGLAB .set files using MNE-QT Browser"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "AutoClean Team"}
+]
+dependencies = [
+    "mne>=1.7",
+    "mne-qt-browser>=0.5.2",
+    "click>=8.0",
+    "pyqt5; sys_platform == 'darwin'"
+]
+
+[project.scripts]
+autoclean-view = "autoclean_view.cli:main"
+
+[tool.setuptools]
+packages = ["autoclean_view"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
