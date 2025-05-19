@@ -4,7 +4,6 @@ import os
 import sys
 from pathlib import Path
 import mne
-from mne_qt_browser import plot_raw
 
 
 def load_set_file(file_path):
@@ -54,5 +53,5 @@ def view_eeg(raw):
         os.environ["QT_QPA_PLATFORM"] = "cocoa"
     
     # Launch the QT Browser
-    fig = plot_raw(raw, block=True)
+    fig = raw.plot(block=True)
     return fig
