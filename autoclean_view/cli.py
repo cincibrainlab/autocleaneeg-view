@@ -17,18 +17,13 @@ def main(file, view):
     """
     try:
         # Load the .set file
-        raw = load_set_file(file)
-        
+        eeg = load_set_file(file)
         if view:
             # Launch the viewer
-            view_eeg(raw)
+            view_eeg(eeg)
         else:
             # Just print basic info about the loaded file
             click.echo(f"Loaded {file} successfully:")
-            click.echo(f"  {len(raw.ch_names)} channels, {raw.n_times} samples")
-            click.echo(f"  Duration: {raw.times[-1]:.1f} seconds")
-            click.echo(f"  Sampling rate: {raw.info['sfreq']} Hz")
-            click.echo("\nUse --view to visualize the data.")
         
         return 0
     

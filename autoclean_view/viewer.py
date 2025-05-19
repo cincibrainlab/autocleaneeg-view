@@ -29,18 +29,25 @@ def load_set_file(file_path):
         raise ValueError(f"File must have .set extension, got: {file_path}")
     
     try:
-        # Load the .set file
-        raw = mne.io.read_raw_eeglab(file_path, preload=True)
+        # Try loading as Raw first
+        eeg = mne.io.read_raw_eeglab(file_path, preload=True)
         
         # Pick common channel types
-        raw.pick_types(eeg=True, eog=True, ecg=True, emg=True, misc=True)
+        eeg.pick_types(eeg=True, eog=True, ecg=True, emg=True, misc=True)
         
-        return raw
+        return eeg
     except Exception as e:
-        raise RuntimeError(f"Error loading .set file: {e}") from e
+        try:
+            # If Raw loading fails, try loading as Epochs
+            eeg = mne.io.read_epochs_eeglab(file_path)
+            
+            return eeg
+        except Exception as inner_e:
+            raise RuntimeError(f"Error loading .set file: {e}; also tried epochs loader: {inner_e}") from e
 
 
-def view_eeg(raw):
+
+def view_eeg(eeg):
     """Display EEG data using MNE-QT Browser.
     
     Parameters
@@ -53,5 +60,6 @@ def view_eeg(raw):
         os.environ["QT_QPA_PLATFORM"] = "cocoa"
     
     # Launch the QT Browser
-    fig = raw.plot(block=True)
+    fig = eeg.plot(block=True)
+
     return fig
