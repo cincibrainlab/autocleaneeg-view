@@ -1,52 +1,68 @@
-# AutoClean-View
+# 🧠 AutoClean-View
 
-**AutoClean-View** is a lightweight Python package for visualizing EEGLAB `.set` files using the modern MNE-QT Browser.
+**AutoClean-View** is a simple yet powerful tool for neuroscientists, researchers, and EEG enthusiasts to visualize EEGLAB `.set` files using the modern MNE-QT Browser.
 
-## Features
-- Load `.set` EEG files
-- View using MNE's interactive Qt-based signal browser
-- Easy CLI interface: `autoclean-view yourfile.set --view`
-- Built on MNE-Python and mne-qt-browser
+## ✨ Features
 
-## Installation
+- **Simple Interface**: Just one command to view your EEG data
+- **Interactive Visualization**: Pan, zoom, filter, and explore your EEG signals
+- **Automatic Channel Type Detection**: Properly handles EEG, EOG, ECG channels
+- **Event Markers**: View annotations and event markers in your recordings
+- **Cross-Platform**: Works on macOS and Linux
+
+## 🚀 Quick Start
+
+### Installation
+
 ```bash
 pip install autoclean-view
 ```
 
-## Usage
+### Basic Usage
+
 ```bash
-autoclean-view path/to/yourfile.set --view
+# View an EEG file
+autoclean-view path/to/yourfile.set
+
+# Load without viewing (just check if file is valid)
+autoclean-view path/to/yourfile.set --no-view
 ```
 
-## Test with Simulated Data
-The package includes scripts to generate and test with simulated EEG data:
+## 🧪 Test With Simulated Data
 
-1. Generate simulated data:
-   ```bash
-   python scripts/generate_test_data.py --output data/simulated_eeg.set
-   ```
+Don't have EEG data handy? Generate realistic test data to try it out:
 
-2. Or run the all-in-one test script:
-   ```bash
-   ./scripts/test_with_simulated_data.sh
-   ```
+```bash
+# Generate a 10-second recording with 32 channels
+python scripts/generate_test_data.py --output data/simulated_eeg.set
+
+# Quick test all in one step
+./scripts/test_with_simulated_data.sh
+```
 
 ### Simulation Options
+
+Customize your simulated data:
+
 ```
 python scripts/generate_test_data.py --help
 ```
 
-Options include:
-- `--duration`: Length of simulated recording (seconds)
-- `--sfreq`: Sampling frequency (Hz)
-- `--channels`: Number of EEG channels
-- `--no-events`: Disable simulated events
-- `--no-artifacts`: Disable simulated artifacts
+- `--duration 60`: Create a 60-second recording
+- `--sfreq 512`: Set sampling rate to 512 Hz
+- `--channels 64`: Generate 64 channel EEG
+- `--no-events`: Disable simulated event markers
+- `--no-artifacts`: Generate clean data without eye blinks/artifacts
 
-## Requirements
-- Python 3.9+
-- macOS or Linux
-- PyQt5 or compatible Qt backend
+## 📋 Requirements
 
-## License
-MIT License
+- Python 3.9 or higher
+- MNE-Python 1.7+
+- MNE-QT-Browser 0.5.2+
+- PyQt5 (macOS) or compatible Qt backend
+
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
+
+## 📝 License
+
+[MIT License](LICENSE)
