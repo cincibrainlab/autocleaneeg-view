@@ -18,6 +18,7 @@ def main(file, view):
     try:
         # Load the .set file
         eeg = load_set_file(file)
+        breakpoint()
         if view:
             # Launch the viewer
             view_eeg(eeg)

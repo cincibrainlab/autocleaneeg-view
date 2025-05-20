@@ -55,10 +55,17 @@ def view_eeg(eeg):
     raw : mne.io.Raw
         The Raw object to visualize
     """
-    # Set Qt backend to cocoa on macOS for smoother experience
-    if sys.platform == "darwin":
-        os.environ["QT_QPA_PLATFORM"] = "cocoa"
+    # Set appropriate Qt backend based on platform
+    print(f"Debug - Current platform: {sys.platform}")
     
+    if sys.platform == "darwin":
+        print("Debug - Setting macOS (darwin) Qt backend to 'cocoa'")
+        os.environ["QT_QPA_PLATFORM"] = "cocoa"
+    elif sys.platform.startswith("linux"):
+        print("Debug - Setting Linux Qt backend to 'xcb'")
+        os.environ["QT_QPA_PLATFORM"] = "xcb"
+    else:
+        print(f"Debug - Unknown platform: {sys.platform}, no specific Qt backend set")
     # Launch the QT Browser
     fig = eeg.plot(block=True)
 
