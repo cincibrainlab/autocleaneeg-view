@@ -9,8 +9,8 @@ from autoclean_view.viewer import load_set_file, view_eeg
 
 @click.command()
 @click.argument('file', type=click.Path(exists=True))
-@click.option('--view', is_flag=True, help="Launch the MNE-QT Browser to view the data.")
-def main(file, view):
+@click.option('--no-view', is_flag=True, help="Don't launch the MNE-QT Browser to view the data.")
+def main(file, no_view):
     """Load and visualize EEGLAB .set files using MNE-QT Browser.
     
     FILE is the path to the .set file to process.
@@ -18,9 +18,8 @@ def main(file, view):
     try:
         # Load the .set file
         eeg = load_set_file(file)
-        breakpoint()
-        if view:
-            # Launch the viewer
+        if not no_view:
+            # Launch the viewer by default
             view_eeg(eeg)
         else:
             # Just print basic info about the loaded file
