@@ -29,3 +29,4 @@ autoclean-view data/simulated_eeg.set --view
 
 # Deactivate the virtual environment
 deactivate
+
