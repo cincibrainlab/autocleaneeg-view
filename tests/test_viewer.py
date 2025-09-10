@@ -8,7 +8,7 @@ import pytest
 import mne
 import numpy as np
 
-from autoclean_view.viewer import load_set_file, view_eeg
+from autoclean_view.viewer import load_eeg_file, view_eeg
 
 
 @pytest.fixture
@@ -17,21 +17,35 @@ def mock_set_file(tmp_path):
     return tmp_path / "test_data.set"
 
 
-def test_load_set_file_validates_extension(mock_set_file):
-    """Test that load_set_file validates the file extension."""
+@pytest.fixture
+def mock_edf_file(tmp_path):
+    """Create a mock .edf file path for testing."""
+    return tmp_path / "test_data.edf"
+
+
+@pytest.fixture
+def mock_bdf_file(tmp_path):
+    """Create a mock .bdf file path for testing."""
+    return tmp_path / "test_data.bdf"
+
+
+def test_load_eeg_file_validates_extension(mock_set_file):
+    """Test that load_eeg_file validates the file extension."""
     wrong_ext = Path(str(mock_set_file).replace(".set", ".txt"))
-    
-    with pytest.raises(ValueError, match="must have .set extension"):
-        load_set_file(wrong_ext)
+
+    with pytest.raises(
+        ValueError, match="must have .set, .edf, or .bdf extension"
+    ):
+        load_eeg_file(wrong_ext)
 
 
-def test_load_set_file_validates_existence(mock_set_file):
-    """Test that load_set_file validates file existence."""
+def test_load_eeg_file_validates_existence(mock_set_file):
+    """Test that load_eeg_file validates file existence."""
     with pytest.raises(FileNotFoundError):
-        load_set_file(mock_set_file)  # File doesn't exist yet
+        load_eeg_file(mock_set_file)  # File doesn't exist yet
 
 
-def test_load_set_file(monkeypatch, mock_set_file):
+def test_load_eeg_file_set(monkeypatch, mock_set_file):
     """Test loading a .set file with a monkey-patched MNE function."""
     # Create a mock Raw object
     mock_raw = mne.io.RawArray(np.random.rand(10, 1000), 
@@ -47,35 +61,61 @@ def test_load_set_file(monkeypatch, mock_set_file):
     mock_set_file.touch()
     
     # Test loading
-    raw = load_set_file(mock_set_file)
+    raw = load_eeg_file(mock_set_file)
     assert raw is mock_raw
 
 
-def test_view_eeg(monkeypatch, mock_set_file):
-    """Test that view_eeg calls plot_raw with the right parameters."""
-    # Create a mock Raw object
-    mock_raw = mne.io.RawArray(np.random.rand(10, 1000), 
-                              mne.create_info(10, 100, ch_types='eeg'))
-    
-    # Keep track of calls to plot_raw
+def test_load_eeg_file_edf(monkeypatch, mock_edf_file):
+    """Test loading an .edf file with a monkey-patched MNE function."""
+    mock_raw = mne.io.RawArray(
+        np.random.rand(10, 1000), mne.create_info(10, 100, ch_types="eeg")
+    )
+
+    def mock_read_raw_edf(*args, **kwargs):
+        return mock_raw
+
+    monkeypatch.setattr(mne.io, "read_raw_edf", mock_read_raw_edf)
+    mock_edf_file.touch()
+    raw = load_eeg_file(mock_edf_file)
+    assert raw is mock_raw
+
+
+def test_load_eeg_file_bdf(monkeypatch, mock_bdf_file):
+    """Test loading a .bdf file with a monkey-patched MNE function."""
+    mock_raw = mne.io.RawArray(
+        np.random.rand(10, 1000), mne.create_info(10, 100, ch_types="eeg")
+    )
+
+    def mock_read_raw_bdf(*args, **kwargs):
+        return mock_raw
+
+    monkeypatch.setattr(mne.io, "read_raw_bdf", mock_read_raw_bdf)
+    mock_bdf_file.touch()
+    raw = load_eeg_file(mock_bdf_file)
+    assert raw is mock_raw
+
+
+def test_view_eeg(monkeypatch):
+    """Test that view_eeg calls plot with the right parameters."""
+    mock_raw = mne.io.RawArray(
+        np.random.rand(10, 1000), mne.create_info(10, 100, ch_types="eeg")
+    )
+
     plot_calls = []
-    
-    def mock_plot_raw(raw, block=False):
-        plot_calls.append({"raw": raw, "block": block})
+
+    def mock_plot(self, block=False, scalings="auto"):
+        plot_calls.append({"self": self, "block": block, "scalings": scalings})
         return "mock_figure"
-    
-    # Monkeypatch the plot_raw function
-    monkeypatch.setattr("autoclean_view.viewer.plot_raw", mock_plot_raw)
-    
-    # Call view_eeg
+
+    monkeypatch.setattr(mne.io.BaseRaw, "plot", mock_plot)
+
     result = view_eeg(mock_raw)
-    
-    # Check that plot_raw was called correctly
+
     assert len(plot_calls) == 1
-    assert plot_calls[0]["raw"] is mock_raw
+    assert plot_calls[0]["self"] is mock_raw
     assert plot_calls[0]["block"] is True
+    assert plot_calls[0]["scalings"] == "auto"
     assert result == "mock_figure"
-    
-    # Check that QT_QPA_PLATFORM was set on macOS
+
     if sys.platform == "darwin":
         assert os.environ.get("QT_QPA_PLATFORM") == "cocoa"
