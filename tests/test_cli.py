@@ -25,6 +25,7 @@ def test_cli_shows_help(runner):
     assert result.exit_code == 0
     assert "Load and visualize EEG files" in result.output
     assert "--view" in result.output
+    assert "--no-view" in result.output
 
 
 def test_cli_with_nonexistent_file(runner):
@@ -34,8 +35,8 @@ def test_cli_with_nonexistent_file(runner):
     assert "Error: " in result.output
 
 
-def test_cli_view_flag(runner, monkeypatch):
-    """Test that the --view flag calls view_eeg."""
+def test_cli_view_default_and_no_view_flag(runner, monkeypatch):
+    """Test default views and --no-view suppresses viewer."""
     view_called = False
 
     class MockRaw:
@@ -59,18 +60,29 @@ def test_cli_view_flag(runner, monkeypatch):
         with open("test.set", "w") as f:
             f.write("dummy content")
 
-        result = runner.invoke(main, ["test.set", "--view"])
+        # Default behavior: view is launched
+        result = runner.invoke(main, ["test.set"])
         assert result.exit_code == 0
         assert view_called
 
+    # Ensure --no-view suppresses viewer and prints guidance
     view_called = False
     with runner.isolated_filesystem():
         with open("test.set", "w") as f:
             f.write("dummy content")
 
-        result = runner.invoke(main, ["test.set"])
+        result = runner.invoke(main, ["test.set", "--no-view"])
         assert result.exit_code == 0
         assert not view_called
         assert "Loaded test.set successfully:" in result.output
         assert "Use --view to visualize the data." in result.output
 
+    # Backwards-compatibility: explicit --view also launches viewer
+    view_called = False
+    with runner.isolated_filesystem():
+        with open("test.set", "w") as f:
+            f.write("dummy content")
+
+        result = runner.invoke(main, ["test.set", "--view"])
+        assert result.exit_code == 0
+        assert view_called
