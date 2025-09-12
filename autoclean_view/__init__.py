@@ -1,3 +1,3 @@
-"""AutoClean-View: A lightweight tool for viewing EEG files (.set, .edf, .bdf) using MNE-QT Browser."""
+"""Backward compatibility package for autocleaneeg_view."""
 
-__version__ = "0.1.0"
+from autocleaneeg_view import *  # noqa: F401,F403

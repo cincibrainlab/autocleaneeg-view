@@ -3,7 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
-from autoclean_view.cli import main
+from autocleaneeg_view.cli import main
 
 
 @pytest.fixture
@@ -52,8 +52,8 @@ def test_cli_view_flag(runner, monkeypatch):
         nonlocal view_called
         view_called = True
 
-    monkeypatch.setattr("autoclean_view.cli.load_eeg_file", mock_load_eeg_file)
-    monkeypatch.setattr("autoclean_view.cli.view_eeg", mock_view_eeg)
+    monkeypatch.setattr("autocleaneeg_view.cli.load_eeg_file", mock_load_eeg_file)
+    monkeypatch.setattr("autocleaneeg_view.cli.view_eeg", mock_view_eeg)
 
     with runner.isolated_filesystem():
         with open("test.set", "w") as f:

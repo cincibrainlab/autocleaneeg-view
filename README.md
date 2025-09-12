@@ -1,6 +1,6 @@
-# 🧠 AutoClean-View
+# 🧠 AutoCleanEEG-View
 
-**AutoClean-View** is a simple yet powerful tool for neuroscientists, researchers, and EEG enthusiasts to visualize EEGLAB `.set`, `.edf`, and `.bdf` files using the modern MNE-QT Browser.
+**AutoCleanEEG-View** is a simple yet powerful tool for neuroscientists, researchers, and EEG enthusiasts to visualize EEGLAB `.set`, `.edf`, and `.bdf` files using the modern MNE-QT Browser.
 
 ## ✨ Features
 
@@ -15,17 +15,20 @@
 ### Installation
 
 ```bash
-pip install autoclean-view
+pip install autocleaneeg-view
 ```
 
 ### Basic Usage
 
 ```bash
 # View an EEG file
-autoclean-view path/to/yourfile.set --view
+autocleaneeg-view path/to/yourfile.set --view
 
 # Load without viewing (just check if file is valid)
-autoclean-view path/to/yourfile.set
+autocleaneeg-view path/to/yourfile.set
+
+# Legacy command still works
+autoclean-view path/to/yourfile.set --view
 ```
 
 ## 🧪 Test With Simulated Data

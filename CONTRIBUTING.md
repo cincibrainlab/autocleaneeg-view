@@ -1,6 +1,6 @@
-# Contributing to AutoClean-View
+# Contributing to AutoCleanEEG-View
 
-Thank you for considering contributing to AutoClean-View! Here's how you can help improve this project.
+Thank you for considering contributing to AutoCleanEEG-View! Here's how you can help improve this project.
 
 ## Development Setup
 
@@ -8,8 +8,8 @@ Thank you for considering contributing to AutoClean-View! Here's how you can hel
 
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/your-username/autoclean-view.git
-   cd autoclean-view
+   git clone https://github.com/your-username/autocleaneeg-view.git
+   cd autocleaneeg-view
    ```
 
 3. Create a virtual environment and install in development mode:
