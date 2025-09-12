@@ -1,19 +1,19 @@
-"""Compatibility wrapper for autocleaneeg_view.cli."""
+"""Command-line interface for AutoCleanEEG-View."""
 
-from autocleaneeg_view.cli import main  # noqa: F401
-from autocleaneeg_view.cli import *  # noqa: F401,F403
+import sys
+from pathlib import Path
 
 import click
 
-from autoclean_view.viewer import load_eeg_file, view_eeg
+from autocleaneeg_view.viewer import load_eeg_file, view_eeg
 
 
 @click.command()
 @click.argument("file", type=click.Path(exists=True))
 @click.option(
-    "--view/--no-view",
-    default=True,
-    help="Launch the MNE-QT Browser to view the data (default: view; use --no-view to suppress).",
+    "--view",
+    is_flag=True,
+    help="Launch the MNE-QT Browser to view the data.",
 )
 def main(file, view):
     """Load and visualize EEG files (.set, .edf, .bdf) using MNE-QT Browser.
@@ -24,7 +24,7 @@ def main(file, view):
         # Load the EEG file
         eeg = load_eeg_file(file)
         if view:
-            # Launch the viewer by default
+            # Launch the viewer when requested
             view_eeg(eeg)
         else:
             # Just print basic info about the loaded file

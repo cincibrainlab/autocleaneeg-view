@@ -1,0 +1,46 @@
+---
+title: Branding Update
+---
+
+import { Steps, Callout } from "nextra/components";
+
+# Branding Update
+
+<Callout type="info">
+  The package has been renamed to <code>autocleaneeg-view</code>. The old
+  <code>autoclean-view</code> command remains available for compatibility.
+</Callout>
+
+<Steps>
+  <Step title="Rename the project">
+    Updated metadata and source folders to use the new branding while providing
+    wrappers for the legacy name.
+  </Step>
+  <Step title="Expose new executable">
+    Added a new entry point so you can run <code>autocleaneeg-view</code> from the
+    command line.
+  </Step>
+  <Step title="Keep the old command">
+    The previous <code>autoclean-view</code> executable now forwards to the new
+    implementation.
+  </Step>
+  <Step title="Run tests">
+    Verified the changes with <code>pytest</code> to ensure nothing broke.
+  </Step>
+</Steps>
+
+## Verify the update
+
+```bash
+pip install -e .
+autocleaneeg-view --help
+# Legacy command
+autoclean-view --help
+pytest -q
+```
+
+<Diagram>
+User -> autocleaneeg-view -> Viewer
+User -> autoclean-view -> autocleaneeg-view
+</Diagram>
+

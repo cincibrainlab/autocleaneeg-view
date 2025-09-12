@@ -187,7 +187,9 @@ def main():
     print(f"File Size: {file_size_mb:.2f} MB")
     
     # Suggest command to view the data
-    print("\nTo view this data with autoclean-view, run:")
+    print("\nTo view this data with autocleaneeg-view, run:")
+    print(f"autocleaneeg-view {args.output} --view")
+    print("Legacy command also available:")
     print(f"autoclean-view {args.output} --view")
 
 if __name__ == "__main__":

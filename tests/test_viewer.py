@@ -8,7 +8,7 @@ import pytest
 import mne
 import numpy as np
 
-from autoclean_view.viewer import load_eeg_file, view_eeg
+from autocleaneeg_view.viewer import load_eeg_file, view_eeg
 
 
 @pytest.fixture

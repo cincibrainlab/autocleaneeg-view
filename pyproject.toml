@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "autoclean-view"
+name = "autocleaneeg-view"
 version = "0.1.2"
 description = "A lightweight tool for viewing EEGLAB .set files using MNE-QT Browser"
 readme = "README.md"
@@ -20,10 +20,11 @@ dependencies = [
 ]
 
 [project.scripts]
-autoclean-view = "autoclean_view.cli:main"
+autocleaneeg-view = "autocleaneeg_view.cli:main"
+autoclean-view = "autocleaneeg_view.cli:main"
 
 [tool.setuptools]
-packages = ["autoclean_view"]
+packages = ["autocleaneeg_view", "autoclean_view"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
