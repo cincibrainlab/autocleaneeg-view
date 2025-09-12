@@ -21,11 +21,14 @@ pip install autoclean-view
 ### Basic Usage
 
 ```bash
-# View an EEG file
+# View an EEG file (default behavior)
+autoclean-view path/to/yourfile.set
+
+# Explicitly open the viewer (also supported for clarity)
 autoclean-view path/to/yourfile.set --view
 
-# Load without viewing (just check if file is valid)
-autoclean-view path/to/yourfile.set
+# Load without viewing (just validate the file)
+autoclean-view path/to/yourfile.set --no-view
 ```
 
 ## 🧪 Test With Simulated Data
@@ -66,4 +69,3 @@ For detailed installation instructions, see [INSTALL.md](INSTALL.md).
 ## 📝 License
 
 [MIT License](LICENSE)
-
