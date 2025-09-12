@@ -21,15 +21,18 @@ pip install autocleaneeg-view
 ### Basic Usage
 
 ```bash
-# View an EEG file (default behavior)
-autoclean-view path/to/yourfile.set
+# Canonical command (default opens the viewer)
+autocleaneeg-view path/to/yourfile.set
 
 # Explicitly open the viewer (also supported for clarity)
-autoclean-view path/to/yourfile.set --view
+autocleaneeg-view path/to/yourfile.set --view
 
 # Load without viewing (just validate the file)
-autoclean-view path/to/yourfile.set --no-view
+autocleaneeg-view path/to/yourfile.set --no-view
 ```
+
+Note: `autoclean-view` remains available as a legacy alias of
+`autocleaneeg-view` for backward compatibility.
 
 ## 🧪 Test With Simulated Data
 

@@ -1,42 +1,25 @@
-"""Compatibility wrapper for autocleaneeg_view.cli."""
+"""Legacy alias for ``autocleaneeg_view.cli``.
 
-from autocleaneeg_view.cli import main  # noqa: F401
+This module exists for backward compatibility only. It re-exports the
+``main`` entrypoint from ``autocleaneeg_view.cli`` so that imports like
+``from autoclean_view.cli import main`` continue to work while all logic
+is centralized in the new package.
+"""
+
+from __future__ import annotations
+
+import warnings
+
+# Re-export symbols from the new CLI module
 from autocleaneeg_view.cli import *  # noqa: F401,F403
-
-import click
-
-from autoclean_view.viewer import load_eeg_file, view_eeg
+from autocleaneeg_view.cli import main  # noqa: F401
 
 
-@click.command()
-@click.argument("file", type=click.Path(exists=True))
-@click.option(
-    "--view/--no-view",
-    default=True,
-    help="Launch the MNE-QT Browser to view the data (default: view; use --no-view to suppress).",
+warnings.warn(
+    "autoclean_view.cli is deprecated; use autocleaneeg_view.cli instead.",
+    DeprecationWarning,
+    stacklevel=2,
 )
-def main(file, view):
-    """Load and visualize EEG files (.set, .edf, .bdf) using MNE-QT Browser.
-
-    FILE is the path to the EEG file to process.
-    """
-    try:
-        # Load the EEG file
-        eeg = load_eeg_file(file)
-        if view:
-            # Launch the viewer by default
-            view_eeg(eeg)
-        else:
-            # Just print basic info about the loaded file
-            click.echo(f"Loaded {file} successfully:")
-            click.echo("Use --view to visualize the data.")
-
-        return 0
-
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
-        return 1
 
 
-if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover
+__all__ = [*globals().get("__all__", []), "main"]

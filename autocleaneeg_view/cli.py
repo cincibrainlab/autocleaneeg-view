@@ -11,9 +11,9 @@ from autocleaneeg_view.viewer import load_eeg_file, view_eeg
 @click.command()
 @click.argument("file", type=click.Path(exists=True))
 @click.option(
-    "--view",
-    is_flag=True,
-    help="Launch the MNE-QT Browser to view the data.",
+    "--view/--no-view",
+    default=True,
+    help="Launch the MNE-QT Browser to view the data (default: view; use --no-view to suppress).",
 )
 def main(file, view):
     """Load and visualize EEG files (.set, .edf, .bdf) using MNE-QT Browser.
@@ -24,7 +24,7 @@ def main(file, view):
         # Load the EEG file
         eeg = load_eeg_file(file)
         if view:
-            # Launch the viewer when requested
+            # Launch the viewer by default
             view_eeg(eeg)
         else:
             # Just print basic info about the loaded file
