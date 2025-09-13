@@ -1,7 +1,13 @@
-"""EEGLAB .set loader plugin."""
-
 import mne
-
 from . import register_loader
 
-register_loader(".set", mne.io.read_raw_eeglab)
+
+def load_set(path):
+    try:
+        return mne.io.read_raw_eeglab(path, preload=True)
+    except Exception:
+        # Fallback: maybe it's an Epochs file
+        return mne.io.read_epochs_eeglab(path)
+
+
+register_loader(".set", load_set)

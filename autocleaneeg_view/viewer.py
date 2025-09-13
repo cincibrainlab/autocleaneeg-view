@@ -34,30 +34,30 @@ def load_eeg_file(file_path):
     # file does not exist.
     if ext not in loaders.READERS:
         exts = ", ".join(SUPPORTED_EXTENSIONS)
-        raise ValueError(
-            f"File must have one of {exts} extensions, got: {file_path}"
-        )
+        raise ValueError(f"File must have one of {exts} extensions, got: {file_path}")
 
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    try:
-        eeg = loaders.READERS[ext](file_path, preload=True)
+    eeg = loaders.READERS[ext](file_path)
 
-        # Pick common channel types
-        eeg.pick_types(eeg=True, eog=True, ecg=True, emg=True, misc=True)
-        return eeg
-    except Exception as e:  # pragma: no cover - exercised via tests
-        if ext == ".set":
-            try:
-                # If Raw loading fails, try loading as Epochs
-                eeg = mne.io.read_epochs_eeglab(file_path)
-                return eeg
-            except Exception as inner_e:
-                raise RuntimeError(
-                    f"Error loading {ext} file: {e}; also tried epochs loader: {inner_e}"
-                ) from e
-        raise RuntimeError(f"Error loading {ext} file: {e}") from e
+    if eeg is None:
+        raise RuntimeError(f"Loader for {ext} returned None")
+
+    # Check for MNE object type
+    if isinstance(eeg, (mne.io.BaseRaw, mne.epochs.BaseEpochs)):
+        try:
+            # Apply global picking, but only if channels exist
+            if hasattr(eeg, "pick_types"):
+                eeg.pick_types(eeg=True, eog=True, misc=True)
+        except Exception as pick_err:
+            raise RuntimeError(
+                f"Error picking channels for {file_path}: {pick_err}"
+            ) from pick_err
+    else:
+        raise TypeError(f"Loader for {ext} returned unexpected type: {type(eeg)}")
+
+    return eeg
 
 
 # Backwards compatibility
