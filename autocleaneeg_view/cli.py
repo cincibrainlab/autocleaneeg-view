@@ -1,4 +1,7 @@
-"""Command-line interface for AutoCleanEEG-View."""
+"""Command-line interface for AutoCleanEEG-View.
+
+Load and visualize EEG files using the MNE-QT Browser.
+"""
 
 import sys
 from pathlib import Path
@@ -6,6 +9,7 @@ from pathlib import Path
 import click
 
 from autocleaneeg_view.viewer import load_eeg_file, view_eeg
+from autocleaneeg_view import loaders
 
 
 @click.command()
@@ -15,12 +19,22 @@ from autocleaneeg_view.viewer import load_eeg_file, view_eeg
     default=True,
     help="Launch the MNE-QT Browser to view the data (default: view; use --no-view to suppress).",
 )
-def main(file, view):
-    """Load and visualize EEG files (.set, .edf, .bdf, .vhdr, .fif, .raw, .gdf and optionally .mff) using MNE-QT Browser.
+@click.option(
+    "--list-formats",
+    is_flag=True,
+    help="List supported file extensions and exit.",
+)
+def main(file, view, list_formats):
+    """Load and visualize EEG files using MNE-QT Browser.
 
     FILE is the path to the EEG file to process.
     """
     try:
+        if list_formats:
+            exts = ", ".join(loaders.SUPPORTED_EXTENSIONS)
+            click.echo(f"Supported file extensions: {exts}")
+            return 0
+
         # Load the EEG file
         eeg = load_eeg_file(file)
         if view:
@@ -40,3 +54,13 @@ def main(file, view):
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover
+
+# Dynamically augment help with supported formats for --help output
+try:
+    _exts = ", ".join(loaders.SUPPORTED_EXTENSIONS)
+    main.__doc__ = (
+        (main.__doc__ or "").rstrip() +
+        f"\n\nSupported file extensions: {_exts}\n"
+    )
+except Exception:
+    pass
