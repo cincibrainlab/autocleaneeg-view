@@ -99,3 +99,35 @@ def test_view_eeg(monkeypatch):
     if sys.platform == "darwin":
         assert os.environ.get("QT_QPA_PLATFORM") == "cocoa"
 
+
+def test_load_eeg_file_fif_epochs_fallback(monkeypatch, tmp_path):
+    """.fif loader falls back to epochs when raw read fails."""
+    fif_path = tmp_path / "test-epo.fif"
+    fif_path.touch()
+
+    # Force Raw reader to fail
+    def fail_read_raw_fif(*args, **kwargs):
+        raise RuntimeError("not a raw fif")
+
+    # Provide a minimal epochs-like object with pick_types
+    class DummyEpochs:
+        def __init__(self):
+            self.picked = False
+
+        def pick_types(self, **kwargs):
+            self.picked = True
+            return self
+
+    dummy = DummyEpochs()
+
+    def mock_read_epochs(path, preload=True):
+        return dummy
+
+    monkeypatch.setattr(mne.io, "read_raw_fif", fail_read_raw_fif)
+    monkeypatch.setattr(mne, "read_epochs", mock_read_epochs)
+
+    from autocleaneeg_view.viewer import load_eeg_file
+
+    out = load_eeg_file(fif_path)
+    assert out is dummy
+    assert dummy.picked is True
