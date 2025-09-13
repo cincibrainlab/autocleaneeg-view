@@ -11,6 +11,46 @@ from autocleaneeg_view import loaders
 SUPPORTED_EXTENSIONS = loaders.SUPPORTED_EXTENSIONS
 
 
+def validate_loader_output(eeg, file_path, ext):
+    """Validate and post-process MNE loader outputs.
+
+    Accepts Raw and Epochs-like objects. Applies global channel picking.
+    """
+    if eeg is None:
+        raise RuntimeError(f"Loader for {ext} returned None for {file_path}")
+
+    # Accept continuous (BaseRaw) or epoched (BaseEpochs); import guarded
+    try:  # pragma: no cover - defensive import
+        from mne.epochs import BaseEpochs  # type: ignore
+    except Exception:  # pragma: no cover - defensive import
+        BaseEpochs = tuple()  # type: ignore
+
+    if isinstance(eeg, (mne.io.BaseRaw, BaseEpochs)):
+        try:
+            # Keep global picking consistent across loaders
+            if hasattr(eeg, "pick_types"):
+                eeg.pick_types(eeg=True, eog=True, misc=True)
+        except Exception as pick_err:
+            raise RuntimeError(
+                f"Error picking channels in {file_path}: {pick_err}"
+            ) from pick_err
+        return eeg
+
+    # Fallback: duck-typing for any future MNE objects
+    if hasattr(eeg, "pick_types"):
+        try:
+            eeg.pick_types(eeg=True, eog=True, misc=True)
+        except Exception as pick_err:
+            raise RuntimeError(
+                f"Error picking channels in {file_path}: {pick_err}"
+            ) from pick_err
+        return eeg
+
+    raise TypeError(
+        f"Loader for {ext} returned unsupported type {type(eeg)} for file {file_path}"
+    )
+
+
 def load_eeg_file(file_path):
     """Load an EEG file and return an MNE Raw or Epochs object.
 
@@ -40,23 +80,7 @@ def load_eeg_file(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
     eeg = loaders.READERS[ext](file_path)
-
-    if eeg is None:
-        raise RuntimeError(f"Loader for {ext} returned None")
-
-    # Check for MNE object type
-    if isinstance(eeg, (mne.io.BaseRaw, mne.epochs.BaseEpochs)):
-        try:
-            # Apply global picking, but only if channels exist
-            if hasattr(eeg, "pick_types"):
-                eeg.pick_types(eeg=True, eog=True, misc=True)
-        except Exception as pick_err:
-            raise RuntimeError(
-                f"Error picking channels for {file_path}: {pick_err}"
-            ) from pick_err
-    else:
-        raise TypeError(f"Loader for {ext} returned unexpected type: {type(eeg)}")
-
+    eeg = validate_loader_output(eeg, file_path, ext)
     return eeg
 
 
