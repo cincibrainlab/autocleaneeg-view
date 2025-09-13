@@ -6,8 +6,9 @@ from pathlib import Path
 
 import mne
 
+from autocleaneeg_view import loaders
 
-SUPPORTED_EXTENSIONS = {".set", ".edf", ".bdf"}
+SUPPORTED_EXTENSIONS = loaders.SUPPORTED_EXTENSIONS
 
 
 def load_eeg_file(file_path):
@@ -16,8 +17,10 @@ def load_eeg_file(file_path):
     Parameters
     ----------
     file_path : str or Path
-        Path to the EEG file to load. Supported extensions are ``.set``,
-        ``.edf`` and ``.bdf``.
+        Path to the EEG file to load. Supported extensions include ``.set``,
+        ``.edf``, ``.bdf``, ``.vhdr`` (BrainVision), ``.fif`` (MNE), ``.raw``
+        (EGI) and ``.gdf``. ``.mff`` files are also supported when the
+        ``mne.io.read_raw_mff`` function is available.
 
     Returns
     -------
@@ -29,21 +32,17 @@ def load_eeg_file(file_path):
 
     # Validate extension first so users get informative errors even if the
     # file does not exist.
-    if ext not in SUPPORTED_EXTENSIONS:
+    if ext not in loaders.READERS:
+        exts = ", ".join(SUPPORTED_EXTENSIONS)
         raise ValueError(
-            f"File must have .set, .edf, or .bdf extension, got: {file_path}"
+            f"File must have one of {exts} extensions, got: {file_path}"
         )
 
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
     try:
-        if ext == ".set":
-            eeg = mne.io.read_raw_eeglab(file_path, preload=True)
-        elif ext == ".edf":
-            eeg = mne.io.read_raw_edf(file_path, preload=True)
-        else:  # .bdf
-            eeg = mne.io.read_raw_bdf(file_path, preload=True)
+        eeg = loaders.READERS[ext](file_path, preload=True)
 
         # Pick common channel types
         eeg.pick_types(eeg=True, eog=True, ecg=True, emg=True, misc=True)

@@ -16,7 +16,7 @@ from autocleaneeg_view.viewer import load_eeg_file, view_eeg
     help="Launch the MNE-QT Browser to view the data (default: view; use --no-view to suppress).",
 )
 def main(file, view):
-    """Load and visualize EEG files (.set, .edf, .bdf) using MNE-QT Browser.
+    """Load and visualize EEG files (.set, .edf, .bdf, .vhdr, .fif, .raw, .gdf and optionally .mff) using MNE-QT Browser.
 
     FILE is the path to the EEG file to process.
     """

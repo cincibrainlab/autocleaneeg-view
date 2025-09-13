@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.3 — Additional EEG formats
+- Support BrainVision `.vhdr`, EGI `.mff`/`.raw`, MNE `.fif`, and `.gdf` files.
+- Update CLI help, README, and tests to cover new formats.
+
+## 0.1.4 — Modular loader plugins
+- Split each EEG format reader into its own plugin module for maintainability.
+- Document the plugin registry and update tests accordingly.
+
 ## 0.1.2 — Restore default viewer behavior
 - Default behavior now opens the MNE-QT Browser when a file is provided.
 - Introduce `--view/--no-view` toggle (default: `--view`).

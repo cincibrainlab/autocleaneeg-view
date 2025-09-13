@@ -1,6 +1,6 @@
 # 🧠 AutoCleanEEG-View
 
-**AutoCleanEEG-View** is a simple yet powerful tool for neuroscientists, researchers, and EEG enthusiasts to visualize EEGLAB `.set`, `.edf`, and `.bdf` files using the modern MNE-QT Browser.
+**AutoCleanEEG-View** is a simple yet powerful tool for neuroscientists, researchers, and EEG enthusiasts to visualize EEG files such as EEGLAB `.set`, `.edf`, `.bdf`, BrainVision `.vhdr`, EGI `.mff`/`.raw`, and MNE `.fif` using the modern MNE-QT Browser.
 
 ## ✨ Features
 
@@ -9,6 +9,7 @@
 - **Automatic Channel Type Detection**: Properly handles EEG, EOG, ECG channels
 - **Event Markers**: View annotations and event markers in your recordings
 - **Cross-Platform**: Works on macOS and Linux
+- **Extensible Loaders**: Each format lives in its own plugin module for easy maintenance
 
 ## 🚀 Quick Start
 
@@ -25,10 +26,10 @@ pip install autocleaneeg-view
 autocleaneeg-view path/to/yourfile.set
 
 # Explicitly open the viewer (also supported for clarity)
-autocleaneeg-view path/to/yourfile.set --view
+autocleaneeg-view path/to/yourfile.vhdr --view
 
 # Load without viewing (just validate the file)
-autocleaneeg-view path/to/yourfile.set --no-view
+autocleaneeg-view path/to/yourfile.fif --no-view
 ```
 
 Note: `autoclean-view` remains available as a legacy alias of

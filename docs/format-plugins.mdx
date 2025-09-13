@@ -1,0 +1,38 @@
+---
+title: Loader Plugin Architecture
+---
+
+import { Steps, Callout, Diagram } from "nextra/components";
+
+# Loader Plugin Architecture
+
+<Callout type="info">
+  Each EEG format now has its own plugin module that registers a loader with a central registry.
+</Callout>
+
+<Steps>
+  <Step title="Introduce registry">
+    Built a tiny <code>register_loader</code> helper in <code>autocleaneeg_view.loaders</code> to keep a mapping of extensions to reader functions.
+  </Step>
+  <Step title="Split modules">
+    Created dedicated modules like <code>eeglab.py</code>, <code>brainvision.py</code>, and <code>egi.py</code> under <code>autocleaneeg_view/loaders/</code>. Each calls <code>register_loader</code> with its extension and corresponding <code>mne.io.read_raw_*</code> function.
+  </Step>
+  <Step title="Use registry in viewer">
+    The viewer consults the registry so dropping in a new plugin automatically enables a new format.
+  </Step>
+</Steps>
+
+<Callout type="warning">
+  Optional readers such as EGI <code>.mff</code> register only if the corresponding <code>mne.io</code> function exists.
+</Callout>
+
+## Verify the plugin system
+
+```bash
+pip install -e .
+pytest -q
+```
+
+<Diagram>
+loader/*.py -> registry -> load_eeg_file -> MNE reader
+</Diagram>
