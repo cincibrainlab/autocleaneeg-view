@@ -4,7 +4,16 @@ import mne
 
 from . import register_loader
 
-register_loader(".raw", mne.io.read_raw_egi)
+
+def load_egi_raw(path):
+    return mne.io.read_raw_egi(path, preload=True)
+
+
+register_loader(".raw", load_egi_raw)
+
 
 if hasattr(mne.io, "read_raw_mff"):  # pragma: no cover - optional dependency
-    register_loader(".mff", mne.io.read_raw_mff)
+    def load_mff(path):
+        return mne.io.read_raw_mff(path, preload=True)
+
+    register_loader(".mff", load_mff)

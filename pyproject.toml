@@ -23,8 +23,8 @@ dependencies = [
 autocleaneeg-view = "autocleaneeg_view.cli:main"
 autoclean-view = "autocleaneeg_view.cli:main"
 
-[tool.setuptools]
-packages = ["autocleaneeg_view", "autoclean_view"]
+[tool.setuptools.packages.find]
+include = ["autocleaneeg_view*", "autoclean_view*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

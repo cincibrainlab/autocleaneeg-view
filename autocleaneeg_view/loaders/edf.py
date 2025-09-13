@@ -4,4 +4,10 @@ import mne
 
 from . import register_loader
 
-register_loader(".edf", mne.io.read_raw_edf)
+
+def load_edf(path):
+    """Load EDF with preload for consistency."""
+    return mne.io.read_raw_edf(path, preload=True)
+
+
+register_loader(".edf", load_edf)

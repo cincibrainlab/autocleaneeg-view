@@ -29,7 +29,7 @@ def validate_loader_output(eeg, file_path, ext):
         try:
             # Keep global picking consistent across loaders
             if hasattr(eeg, "pick_types"):
-                eeg.pick_types(eeg=True, eog=True, misc=True)
+                eeg.pick_types(eeg=True, eog=True, ecg=True, misc=True)
         except Exception as pick_err:
             raise RuntimeError(
                 f"Error picking channels in {file_path}: {pick_err}"
@@ -39,7 +39,7 @@ def validate_loader_output(eeg, file_path, ext):
     # Fallback: duck-typing for any future MNE objects
     if hasattr(eeg, "pick_types"):
         try:
-            eeg.pick_types(eeg=True, eog=True, misc=True)
+            eeg.pick_types(eeg=True, eog=True, ecg=True, misc=True)
         except Exception as pick_err:
             raise RuntimeError(
                 f"Error picking channels in {file_path}: {pick_err}"
