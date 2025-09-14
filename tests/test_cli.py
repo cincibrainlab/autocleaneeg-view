@@ -4,6 +4,7 @@ import pytest
 from click.testing import CliRunner
 
 from autocleaneeg_view.cli import main
+from autocleaneeg_view import loaders
 
 
 @pytest.fixture
@@ -64,6 +65,20 @@ def test_cli_view_default_and_no_view_flag(runner, monkeypatch):
         result = runner.invoke(main, ["test.set"])
         assert result.exit_code == 0
         assert view_called
+
+
+def test_cli_list_formats(runner):
+    """--list-formats prints supported extensions and exits 0."""
+    with runner.isolated_filesystem():
+        # Click requires the FILE arg to exist due to Path(exists=True)
+        with open("dummy.set", "w") as f:
+            f.write("")
+
+        result = runner.invoke(main, ["--list-formats", "dummy.set"])
+        assert result.exit_code == 0
+        assert "Supported file extensions:" in result.output
+        for ext in loaders.SUPPORTED_EXTENSIONS:
+            assert ext in result.output
 
     # Ensure --no-view suppresses viewer and prints guidance
     view_called = False

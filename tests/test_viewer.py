@@ -49,6 +49,7 @@ _PARAMS = [
     (".fif", "read_raw_fif", False),
     (".raw", "read_raw_egi", False),
     (".gdf", "read_raw_gdf", False),
+    (".xdat", "neuronexus", False),
 ]
 if hasattr(mne.io, "read_raw_mff"):
     _PARAMS.append((".mff", "read_raw_mff", True))
