@@ -1,0 +1,38 @@
+---
+title: Additional EEG Format Support
+---
+
+import { Steps, Callout, Diagram } from "nextra/components";
+
+# Additional EEG Format Support
+
+<Callout type="info">
+  Expanded file loading to handle BrainVision <code>.vhdr</code>, EGI <code>.mff</code>/<code>.raw</code>, MNE <code>.fif</code>, and <code>.gdf</code> files in addition to the original <code>.set</code>, <code>.edf</code>, and <code>.bdf</code>.
+</Callout>
+
+<Steps>
+  <Step title="Map extensions to readers">
+    Introduced a lookup table that connects each supported extension with its corresponding <code>mne.io.read_raw_*</code> function. This makes adding future formats straightforward.
+  </Step>
+  <Step title="Adjust CLI and docs">
+    Updated help text and README examples so users know they can open BrainVision, EGI, and other common EEG datasets.
+  </Step>
+  <Step title="Simulate formats in tests">
+    Parameterized unit tests monkey‑patch MNE readers and create temporary files or folders&mdash;note that EGI <code>.mff</code> recordings are directories&mdash;to verify every extension is routed correctly.
+  </Step>
+</Steps>
+
+## Verify the update
+
+```bash
+pip install -e .
+pytest -q
+```
+
+<Diagram>
+.vhdr -> read_raw_brainvision
+.mff/.raw -> read_raw_mff/read_raw_egi
+.fif -> read_raw_fif
+.gdf -> read_raw_gdf
+</Diagram>
+

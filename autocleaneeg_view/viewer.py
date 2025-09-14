@@ -6,8 +6,63 @@ from pathlib import Path
 
 import mne
 
+from autocleaneeg_view import loaders
 
-SUPPORTED_EXTENSIONS = {".set", ".edf", ".bdf"}
+SUPPORTED_EXTENSIONS = loaders.SUPPORTED_EXTENSIONS
+
+
+def _detect_extension(file_path: Path) -> str:
+    """Detect registered extension, supporting multi-part suffixes.
+
+    Chooses the longest matching registered extension for the filename.
+    """
+    name = file_path.name.lower()
+    # Prefer longer patterns first (e.g., .xdat.json before .json)
+    for key in sorted(loaders.READERS.keys(), key=len, reverse=True):
+        if name.endswith(key):
+            return key
+    # Fallback to simple suffix
+    return file_path.suffix.lower()
+
+
+def validate_loader_output(eeg, file_path, ext):
+    """Validate and post-process MNE loader outputs.
+
+    Accepts Raw and Epochs-like objects. Applies global channel picking.
+    """
+    if eeg is None:
+        raise RuntimeError(f"Loader for {ext} returned None for {file_path}")
+
+    # Accept continuous (BaseRaw) or epoched (BaseEpochs); import guarded
+    try:  # pragma: no cover - defensive import
+        from mne.epochs import BaseEpochs  # type: ignore
+    except Exception:  # pragma: no cover - defensive import
+        BaseEpochs = tuple()  # type: ignore
+
+    if isinstance(eeg, (mne.io.BaseRaw, BaseEpochs)):
+        try:
+            # Keep global picking consistent across loaders
+            if hasattr(eeg, "pick_types"):
+                eeg.pick_types(eeg=True, eog=True, ecg=True, misc=True)
+        except Exception as pick_err:
+            raise RuntimeError(
+                f"Error picking channels in {file_path}: {pick_err}"
+            ) from pick_err
+        return eeg
+
+    # Fallback: duck-typing for any future MNE objects
+    if hasattr(eeg, "pick_types"):
+        try:
+            eeg.pick_types(eeg=True, eog=True, ecg=True, misc=True)
+        except Exception as pick_err:
+            raise RuntimeError(
+                f"Error picking channels in {file_path}: {pick_err}"
+            ) from pick_err
+        return eeg
+
+    raise TypeError(
+        f"Loader for {ext} returned unsupported type {type(eeg)} for file {file_path}"
+    )
 
 
 def load_eeg_file(file_path):
@@ -16,8 +71,10 @@ def load_eeg_file(file_path):
     Parameters
     ----------
     file_path : str or Path
-        Path to the EEG file to load. Supported extensions are ``.set``,
-        ``.edf`` and ``.bdf``.
+        Path to the EEG file to load. Supported extensions include ``.set``,
+        ``.edf``, ``.bdf``, ``.vhdr`` (BrainVision), ``.fif`` (MNE), ``.raw``
+        (EGI) and ``.gdf``. ``.mff`` files are also supported when the
+        ``mne.io.read_raw_mff`` function is available.
 
     Returns
     -------
@@ -25,40 +82,20 @@ def load_eeg_file(file_path):
         The loaded object.
     """
     file_path = Path(file_path)
-    ext = file_path.suffix.lower()
+    ext = _detect_extension(file_path)
 
     # Validate extension first so users get informative errors even if the
     # file does not exist.
-    if ext not in SUPPORTED_EXTENSIONS:
-        raise ValueError(
-            f"File must have .set, .edf, or .bdf extension, got: {file_path}"
-        )
+    if ext not in loaders.READERS:
+        exts = ", ".join(SUPPORTED_EXTENSIONS)
+        raise ValueError(f"File must have one of {exts} extensions, got: {file_path}")
 
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    try:
-        if ext == ".set":
-            eeg = mne.io.read_raw_eeglab(file_path, preload=True)
-        elif ext == ".edf":
-            eeg = mne.io.read_raw_edf(file_path, preload=True)
-        else:  # .bdf
-            eeg = mne.io.read_raw_bdf(file_path, preload=True)
-
-        # Pick common channel types
-        eeg.pick_types(eeg=True, eog=True, ecg=True, emg=True, misc=True)
-        return eeg
-    except Exception as e:  # pragma: no cover - exercised via tests
-        if ext == ".set":
-            try:
-                # If Raw loading fails, try loading as Epochs
-                eeg = mne.io.read_epochs_eeglab(file_path)
-                return eeg
-            except Exception as inner_e:
-                raise RuntimeError(
-                    f"Error loading {ext} file: {e}; also tried epochs loader: {inner_e}"
-                ) from e
-        raise RuntimeError(f"Error loading {ext} file: {e}") from e
+    eeg = loaders.READERS[ext](file_path)
+    eeg = validate_loader_output(eeg, file_path, ext)
+    return eeg
 
 
 # Backwards compatibility
