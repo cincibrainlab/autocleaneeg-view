@@ -16,8 +16,11 @@ dependencies = [
     "mne>=1.7",
     "mne-qt-browser>=0.5.2",
     "click>=8.0",
-    "pyqt5; sys_platform == 'darwin'"
+    "pyqt5; sys_platform == 'darwin'",
+    "neo>=0.13",
+    "quantities>=0.14"
 ]
+
 
 [project.scripts]
 autocleaneeg-view = "autocleaneeg_view.cli:main"

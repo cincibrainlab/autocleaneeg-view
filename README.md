@@ -1,6 +1,6 @@
 # 🧠 AutoCleanEEG-View
 
-**AutoCleanEEG-View** is a simple yet powerful tool for neuroscientists, researchers, and EEG enthusiasts to visualize EEG files such as EEGLAB `.set`, `.edf`, `.bdf`, BrainVision `.vhdr`, EGI `.mff`/`.raw`, and MNE `.fif` using the modern MNE-QT Browser.
+**AutoCleanEEG-View** is a simple yet powerful tool for neuroscientists, researchers, and EEG enthusiasts to visualize EEG files such as EEGLAB `.set`, `.edf`, `.bdf`, BrainVision `.vhdr`, EGI `.mff`/`.raw`, MNE `.fif`, and NeuroNexus (`.nnx`, `.nex`, via Neo) using the modern MNE-QT Browser.
 
 ## ✨ Features
 
@@ -13,9 +13,13 @@
 
 ## 🚀 Quick Start
 
-### Installation
+### Installation (uv preferred)
 
 ```bash
+# Using Astral's uv (recommended)
+uv pip install autocleaneeg-view
+
+# Or with pip
 pip install autocleaneeg-view
 ```
 
@@ -34,6 +38,9 @@ autocleaneeg-view path/to/yourfile.fif --no-view
 
 Note: `autoclean-view` remains available as a legacy alias of
 `autocleaneeg-view` for backward compatibility.
+
+NeuroNexus support (`.xdat`, `.nnx`, `.nex`) is included by default and uses
+Neo’s `NeuroNexusIO` under the hood.
 
 ## 🧪 Test With Simulated Data
 
