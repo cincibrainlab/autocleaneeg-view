@@ -1,0 +1,162 @@
+---
+title: Getting Started & Tutorial
+description: Quick start, CLI guide, NeuroNexus (.xdat) walkthrough, and troubleshooting in one place.
+---
+
+import { Steps, Callout, Tabs } from "nextra/components";
+
+# AutoCleanEEG‑View — Getting Started
+
+AutoCleanEEG‑View lets you open and explore EEG recordings in the MNE‑QT Browser with a single command. It supports EEGLAB `.set`, EDF `.edf`, BioSemi `.bdf`, BrainVision `.vhdr`, EGI `.raw`/`.mff`, MNE `.fif` (Raw or Epochs), GDF `.gdf`, and NeuroNexus `.xdat` (via Neo).
+
+<Callout type="info">
+  Prefer the `autocleaneeg-view` command. The older `autoclean-view` remains as a legacy alias.
+  On macOS, Qt setup is handled automatically.
+  We recommend <code>uv</code> (Astral) for installs and running.
+  
+  Supported extensions are detected dynamically from the loader registry.
+  Run <code>autocleaneeg-view --list-formats dummy.set</code> to see the current list.
+  
+</Callout>
+
+## Install
+
+```bash
+# Using Astral's uv (recommended)
+uv pip install autocleaneeg-view
+
+# Or with pip
+pip install autocleaneeg-view
+```
+
+## Quick Start
+
+<Steps>
+  <Step title="Open a file">
+    ```bash
+    autocleaneeg-view path/to/recording.set
+    ```
+    Default behavior launches the MNE‑QT Browser. Use <code>--no-view</code> to skip launching (validation only), or <code>--view</code> explicitly.
+  </Step>
+  <Step title="Open a directory">
+    ```bash
+    autocleaneeg-view path/to/dataset_dir --view
+    ```
+    If the directory contains exactly one supported file (or a single <code>.xdat.json</code>), it resolves automatically.
+  </Step>
+  <Step title="List supported formats">
+    ```bash
+    autocleaneeg-view --list-formats dummy.set
+    ```
+    Prints all registered extensions from the loader registry.
+  </Step>
+</Steps>
+
+## Command Reference
+
+```bash
+autocleaneeg-view FILE|DIR [--view|--no-view] [--list-formats dummy.set] [--diagnose]
+```
+
+- `--view/--no-view`: Launch or suppress the viewer (default: `--view`).
+- `--list-formats`: Show supported extensions and exit (requires a placeholder arg due to Click).
+- `--diagnose`: For NeuroNexus inputs (`.xdat`/`.xdat.json`), print companion‑file checks before loading.
+
+## Tutorial — NeuroNexus .xdat
+
+NeuroNexus `.xdat` recordings use a sidecar JSON and paired data/timestamp files. AutoCleanEEG‑View integrates Neo’s `NeuroNexusIO` and handles composite extensions.
+
+<Steps>
+  <Step title="Check your files">
+    ```bash
+    ls /path/to/xdat
+    # Expect:
+    # <base>.xdat.json
+    # <base>_data.xdat
+    # <base>_timestamp.xdat
+    ```
+    All three should be in the same directory with matching base names.
+  </Step>
+  <Step title="Diagnose companion files">
+    ```bash
+    autocleaneeg-view /path/to/xdat/<base>.xdat.json --diagnose --no-view
+    ```
+    You’ll see a status line for JSON/DATA/TIME files. If a file is missing, fix the directory layout.
+  </Step>
+  <Step title="Open in viewer">
+    ```bash
+    autocleaneeg-view /path/to/xdat/<base>.xdat.json --view
+    ```
+    Tip: you can also point to the directory; if it contains exactly one <code>.xdat.json</code>, it resolves automatically:
+    ```bash
+    autocleaneeg-view /path/to/xdat --view
+    ```
+  </Step>
+  <Step title="What the loader does">
+    The loader builds an MNE `RawArray` by:
+    - Reading with Neo’s `NeuroNexusIO`
+    - Rescaling volt‑based signals to V when possible
+    - Treating digital (dimensionless) channels as `stim`
+    - Assigning `eeg` to primary analog and `misc` to auxiliary
+    - Enforcing a single sampling rate across signals
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<Tabs items={["General", "NeuroNexus", "macOS Qt"]}>
+  <Tab>
+    - Verify file exists and has a supported extension.
+    - Use `--list-formats` to confirm the registry sees your format.
+    - Run with `--no-view` to check loading without launching a window.
+    - If loading fails, the CLI prints a contextual error; copy/paste it when reporting issues.
+  </Tab>
+  <Tab>
+    - Always open the `.xdat.json` file (the loader also resolves from `.xdat` to the sidecar automatically when possible).
+    - Ensure the matching `<base>_data.xdat` and `<base>_timestamp.xdat` are present in the same directory.
+    - Use `--diagnose` for a quick companion check.
+  </Tab>
+  <Tab>
+    - The app sets `QT_QPA_PLATFORM=cocoa` on macOS automatically.
+    - If the window doesn’t show, verify you have a local desktop session.
+    - Consider `uv run` for a clean, isolated environment.
+  </Tab>
+</Tabs>
+
+## How Formats Are Registered
+
+Loaders live under `autocleaneeg_view/loaders/` and register themselves with a central registry. The viewer queries this registry and chooses the appropriate reader based on the longest matching extension (supports composite extensions like `.xdat.json`).
+
+```python
+from autocleaneeg_view.loaders import register_loader
+
+def load_custom(path):
+    ...
+
+register_loader(".xyz", load_custom)
+```
+
+## Contributing
+
+We welcome PRs for format improvements, better channel typing, and documentation:
+
+- Keep format‑specific quirks inside the relevant loader module
+- Add focused tests similar to those under `tests/`
+- Update this page if UX changes (CLI flags, behavior)
+
+## One‑liners
+
+```bash
+# Show help
+autocleaneeg-view --help
+
+# Validate a file without popping a window
+autocleaneeg-view path/to/file.set --no-view
+
+# Show formats
+autocleaneeg-view --list-formats dummy.set
+
+# Diagnose and open a NeuroNexus recording
+autocleaneeg-view /data/xdat/FX9-923_0__uid0405-19-24-31.xdat.json --diagnose --view
+```
+
