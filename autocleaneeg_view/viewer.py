@@ -11,6 +11,20 @@ from autocleaneeg_view import loaders
 SUPPORTED_EXTENSIONS = loaders.SUPPORTED_EXTENSIONS
 
 
+def _detect_extension(file_path: Path) -> str:
+    """Detect registered extension, supporting multi-part suffixes.
+
+    Chooses the longest matching registered extension for the filename.
+    """
+    name = file_path.name.lower()
+    # Prefer longer patterns first (e.g., .xdat.json before .json)
+    for key in sorted(loaders.READERS.keys(), key=len, reverse=True):
+        if name.endswith(key):
+            return key
+    # Fallback to simple suffix
+    return file_path.suffix.lower()
+
+
 def validate_loader_output(eeg, file_path, ext):
     """Validate and post-process MNE loader outputs.
 
@@ -68,7 +82,7 @@ def load_eeg_file(file_path):
         The loaded object.
     """
     file_path = Path(file_path)
-    ext = file_path.suffix.lower()
+    ext = _detect_extension(file_path)
 
     # Validate extension first so users get informative errors even if the
     # file does not exist.
