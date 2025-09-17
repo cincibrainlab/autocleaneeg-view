@@ -1,0 +1,77 @@
+---
+title: NeuroNexus channel remapping overhaul
+description: Modular MEA label remapping for Allego .xdat imports, verification steps, and extension hints.
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+
+# NeuroNexus channel remapping overhaul
+
+<Callout type="info">
+  This run introduces a pluggable remapping layer for NeuroNexus Allego datasets.
+  The loader now translates Allego <code>pr*</code> labels to MEA-style names (e.g. <code>Ch 01</code>)
+  using the hardware channel IDs, mirroring the MATLAB <code>xdat2meaLookup</code> helper.
+  Two hardware channels (<code>2</code> and <code>32</code>) are dropped automatically to match the vendor workflow.
+</Callout>
+
+## What happened
+
+<Steps>
+  <Step title="Modular remap utility">
+    Created <code>autocleaneeg_view/loaders/neuronexus_remap.py</code>,
+    housing a data-driven <code>ChannelNameRemapper</code> class, helper functions,
+    and the default Allego mapping table (30 MEA channels).
+    Editing this file lets you add/replace mappings without touching the main loader.
+  </Step>
+  <Step title="Loader integration">
+    Updated <code>autocleaneeg_view/loaders/neuronexus.py</code> to call the remapper for each analog signal.
+    The loader now keeps track of channel IDs, applies the mapping, trims removed channels,
+    and classifies primary analog streams as EEG while keeping auxiliary/digital streams untouched.
+    When Neo omits <code>channel_ids</code> the loader infers them from Allego <code>prXX</code> labels so the
+    MATLAB workflow and direct Allego exports both map cleanly to MEA names.
+  </Step>
+  <Step title="Safety net tests">
+    Added <code>tests/test_neuronexus_remap.py</code> to validate the default mapping,
+    ensure non-primary streams are left alone, and demonstrate how a custom remapper behaves.
+  </Step>
+</Steps>
+
+## How to verify the change
+
+<Tabs items={["Automated", "Manual"]}>
+  <Tab>
+    1. Install development dependencies (`uv pip install -e .[test]` or plain `pip`).
+    2. Run the unit suite:
+
+    ```bash
+    pytest
+    ```
+
+    The new tests confirm the MEA mapping table, channel dropping, and custom remapper options.
+  </Tab>
+  <Tab>
+    1. Load a NeuroNexus recording (`autocleaneeg-view path/to/file.xdat.json --no-view`).
+    2. Inspect the reported channel names: the primary stream should now read <code>Ch 01</code> … <code>Ch 30</code>.
+    3. Optional: temporarily change the mapping table in <code>neuronexus_remap.py</code> and repeat the load
+       to confirm edits take effect immediately.
+  </Tab>
+</Tabs>
+
+## Customisation checklist
+
+- Duplicate <code>DEFAULT_ALLEGO_PRIMARY_REMAP</code> in <code>neuronexus_remap.py</code> for new hardware layouts.
+- Update the <code>mapping</code> dictionary to reflect your channel ID ➜ label mapping.
+- Adjust <code>drop_ids</code> or set <code>drop_missing=True</code> if you need to exclude unused lines.
+- If your hardware uses different filename prefixes (not <code>prXX</code>) tweak
+  <code>_infer_ids_from_names</code> so automatic ID discovery continues to work when Neo omits <code>channel_ids</code>.
+- Append your remapper to <code>NEURONEXUS_CHANNEL_REMAPPERS</code> so the loader picks it up.
+
+## Concerns & follow-ups
+
+<Callout type="warning">
+  I did not have a real Allego dataset to spot-check the resulting MNE plot.
+  The logic is based on the vendor MATLAB script and Neo’s metadata structure.
+  If future recordings expose additional stream IDs or channel types, consider adding
+  dedicated remappers or more tests to cover them.
+</Callout>
+
