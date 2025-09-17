@@ -5,6 +5,7 @@ Load and visualize EEG files using the MNE-QT Browser.
 
 import sys
 from pathlib import Path
+from typing import Optional, Tuple
 
 import click
 
@@ -12,8 +13,30 @@ from autocleaneeg_view.viewer import load_eeg_file, view_eeg
 from autocleaneeg_view import loaders
 
 
+def _neuronexus_companion_paths(path: Path) -> Optional[Tuple[Path, Path, Path]]:
+    """Return expected NeuroNexus companion files for a given path."""
+    name = path.name.lower()
+    if name.endswith(".xdat.json"):
+        base_token = path.name[: -len(".xdat.json")]
+    elif name.endswith(".xdat"):
+        base_token = path.stem
+        lowered_stem = base_token.lower()
+        if lowered_stem.endswith("_data"):
+            base_token = base_token[: -len("_data")]
+        elif lowered_stem.endswith("_timestamp"):
+            base_token = base_token[: -len("_timestamp")]
+    else:
+        return None
+
+    parent = path.parent
+    json_path = parent / f"{base_token}.xdat.json"
+    data_path = parent / f"{base_token}_data.xdat"
+    ts_path = parent / f"{base_token}_timestamp.xdat"
+    return json_path, data_path, ts_path
+
+
 @click.command()
-@click.argument("file", type=click.Path(exists=True))
+@click.argument("file", type=click.Path(exists=True), required=False)
 @click.option(
     "--view/--no-view",
     default=True,
@@ -34,22 +57,24 @@ def main(file, view, list_formats, diagnose):
 
     FILE is the path to the EEG file to process.
     """
-    try:
-        if list_formats:
-            exts = ", ".join(loaders.SUPPORTED_EXTENSIONS)
-            click.echo(f"Supported file extensions: {exts}")
-            return 0
+    if list_formats:
+        exts = ", ".join(loaders.SUPPORTED_EXTENSIONS)
+        click.echo(f"Supported file extensions: {exts}")
+        return 0
 
-        # Resolve directory inputs: prefer single .xdat.json in directory.
-        from pathlib import Path as _Path
-        p = _Path(file)
-        if p.is_dir():
+    if file is None:
+        raise click.UsageError("FILE argument is required unless --list-formats is used.")
+
+    try:
+        path = Path(file)
+        if path.is_dir():
             # Prefer composite .xdat.json candidates
             cands = [
-                q for q in sorted(p.iterdir()) if q.is_file() and q.name.lower().endswith(".xdat.json")
+                q for q in sorted(path.iterdir()) if q.is_file() and q.name.lower().endswith(".xdat.json")
             ]
             if len(cands) == 1:
                 file = str(cands[0])
+                path = cands[0]
             elif len(cands) > 1:
                 click.echo("Multiple .xdat.json files found; please choose one:")
                 for q in cands:
@@ -58,28 +83,30 @@ def main(file, view, list_formats, diagnose):
             else:
                 # Fall back to any single supported format in directory
                 exts = set(loaders.SUPPORTED_EXTENSIONS)
-                files = [q for q in sorted(p.iterdir()) if q.is_file() and any(q.name.lower().endswith(ext) for ext in exts)]
+                files = [
+                    q
+                    for q in sorted(path.iterdir())
+                    if q.is_file() and any(q.name.lower().endswith(ext) for ext in exts)
+                ]
                 if len(files) == 1:
                     file = str(files[0])
+                    path = files[0]
                 else:
                     click.echo("Could not uniquely resolve a file in directory. Supported extensions:")
                     click.echo(", ".join(loaders.SUPPORTED_EXTENSIONS))
                     return 2
 
         if diagnose:
-            # Lightweight companion checks for .xdat inputs
-            _name = str(file).lower()
-            if _name.endswith(".xdat") or _name.endswith(".xdat.json"):
-                base = _name[:-len(".xdat.json")] if _name.endswith(".xdat.json") else _name[:-len(".xdat")]
-                import os as _os
-                dirn = _os.path.dirname(str(file))
-                exp_json = _os.path.join(dirn, base.split("/")[-1] + ".xdat.json")
-                exp_data = _os.path.join(dirn, base.split("/")[-1] + "_data.xdat")
-                exp_ts = _os.path.join(dirn, base.split("/")[-1] + "_timestamp.xdat")
+            companions = _neuronexus_companion_paths(path)
+            if companions:
                 click.echo("Companion files check:")
-                click.echo(f"  JSON: {exp_json} -> {'OK' if _os.path.exists(exp_json) else 'MISSING'}")
-                click.echo(f"  DATA: {exp_data} -> {'OK' if _os.path.exists(exp_data) else 'MISSING'}")
-                click.echo(f"  TIME: {exp_ts} -> {'OK' if _os.path.exists(exp_ts) else 'MISSING'}")
+                for label, candidate in (
+                    ("JSON", companions[0]),
+                    ("DATA", companions[1]),
+                    ("TIME", companions[2]),
+                ):
+                    status = "OK" if candidate.exists() else "MISSING"
+                    click.echo(f"  {label}: {candidate} -> {status}")
 
         # Load the EEG file
         eeg = load_eeg_file(file)

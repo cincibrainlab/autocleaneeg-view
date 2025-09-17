@@ -2,6 +2,7 @@
 
 import pytest
 from click.testing import CliRunner
+from pathlib import Path
 
 from autocleaneeg_view.cli import main
 from autocleaneeg_view import loaders
@@ -17,7 +18,7 @@ def test_cli_requires_file_argument(runner):
     """Test that CLI requires a file argument."""
     result = runner.invoke(main, [])
     assert result.exit_code != 0
-    assert "Missing argument 'FILE'" in result.output
+    assert "FILE argument is required unless --list-formats is used." in result.output
 
 
 def test_cli_shows_help(runner):
@@ -67,37 +68,65 @@ def test_cli_view_default_and_no_view_flag(runner, monkeypatch):
         assert view_called
 
 
-def test_cli_list_formats(runner):
+def test_cli_list_formats(runner, monkeypatch):
     """--list-formats prints supported extensions and exits 0."""
-    with runner.isolated_filesystem():
-        # Click requires the FILE arg to exist due to Path(exists=True)
-        with open("dummy.set", "w") as f:
-            f.write("")
+    result = runner.invoke(main, ["--list-formats"])
+    assert result.exit_code == 0
+    assert "Supported file extensions:" in result.output
+    for ext in loaders.SUPPORTED_EXTENSIONS:
+        assert ext in result.output
 
-        result = runner.invoke(main, ["--list-formats", "dummy.set"])
-        assert result.exit_code == 0
-        assert "Supported file extensions:" in result.output
-        for ext in loaders.SUPPORTED_EXTENSIONS:
-            assert ext in result.output
-
-    # Ensure --no-view suppresses viewer and prints guidance
     view_called = False
-    with runner.isolated_filesystem():
-        with open("test.set", "w") as f:
-            f.write("dummy content")
 
+    def mock_load_eeg_file(file_path):
+        return object()
+
+    def mock_view_eeg(raw):
+        nonlocal view_called
+        view_called = True
+
+    monkeypatch.setattr("autocleaneeg_view.cli.load_eeg_file", mock_load_eeg_file)
+    monkeypatch.setattr("autocleaneeg_view.cli.view_eeg", mock_view_eeg)
+
+    with runner.isolated_filesystem():
+        Path("test.set").touch()
         result = runner.invoke(main, ["test.set", "--no-view"])
         assert result.exit_code == 0
         assert not view_called
         assert "Loaded test.set successfully:" in result.output
         assert "Use --view to visualize the data." in result.output
 
-    # Backwards-compatibility: explicit --view also launches viewer
     view_called = False
     with runner.isolated_filesystem():
-        with open("test.set", "w") as f:
-            f.write("dummy content")
-
+        Path("test.set").touch()
         result = runner.invoke(main, ["test.set", "--view"])
         assert result.exit_code == 0
         assert view_called
+
+
+def test_cli_diagnose_neuronexus(monkeypatch, runner, tmp_path):
+    """--diagnose reports NeuroNexus companion-file status accurately."""
+    metadata = tmp_path / "subject.xdat.json"
+    metadata.write_text("{}")
+    data = tmp_path / "subject_data.xdat"
+    data.write_text("")
+    timestamps = tmp_path / "subject_timestamp.xdat"
+    timestamps.write_text("")
+
+    def mock_load_eeg_file(file_path):
+        return object()
+
+    monkeypatch.setattr("autocleaneeg_view.cli.load_eeg_file", mock_load_eeg_file)
+    monkeypatch.setattr("autocleaneeg_view.cli.view_eeg", lambda raw: None)
+
+    result = runner.invoke(main, [str(metadata), "--no-view", "--diagnose"])
+    assert result.exit_code == 0
+    assert f"  JSON: {metadata} -> OK" in result.output
+    assert f"  DATA: {data} -> OK" in result.output
+    assert f"  TIME: {timestamps} -> OK" in result.output
+
+    result = runner.invoke(main, [str(data), "--no-view", "--diagnose"])
+    assert result.exit_code == 0
+    assert f"  JSON: {metadata} -> OK" in result.output
+    assert f"  DATA: {data} -> OK" in result.output
+    assert f"  TIME: {timestamps} -> OK" in result.output
