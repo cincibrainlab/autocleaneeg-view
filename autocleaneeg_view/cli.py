@@ -52,7 +52,12 @@ def _neuronexus_companion_paths(path: Path) -> Optional[Tuple[Path, Path, Path]]
     is_flag=True,
     help="Run a quick NeuroNexus (.xdat) companion-file check before loading.",
 )
-def main(file, view, list_formats, diagnose):
+@click.option(
+    "--remap-channels",
+    is_flag=True,
+    help="Apply channel remapping for NeuroNexus files (default: no remapping).",
+)
+def main(file, view, list_formats, diagnose, remap_channels):
     """Load and visualize EEG files using MNE-QT Browser.
 
     FILE is the path to the EEG file to process.
@@ -109,7 +114,7 @@ def main(file, view, list_formats, diagnose):
                     click.echo(f"  {label}: {candidate} -> {status}")
 
         # Load the EEG file
-        eeg = load_eeg_file(file)
+        eeg = load_eeg_file(file, remap_channels=remap_channels)
         if view:
             # Launch the viewer by default
             view_eeg(eeg)

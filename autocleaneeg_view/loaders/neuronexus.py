@@ -11,6 +11,7 @@ import numpy as np
 import mne
 
 from . import register_loader
+from .neuronexus_remap import apply_channel_remappers
 from pathlib import Path
 
 
@@ -47,13 +48,15 @@ def _derive_sidecar_json(p: Path) -> Path | None:
     return None
 
 
-def load_neuronexus(path):
+def load_neuronexus(path, remap_channels=False):
     """Load NeuroNexus data via Neo and return an MNE RawArray.
 
     Parameters
     ----------
     path : str | Path
         Path to a NeuroNexus recording.
+    remap_channels : bool, optional
+        Whether to apply channel remapping. Default is False.
     """
     pq, NeuroNexusIO = _require_neo()
 
@@ -92,30 +95,84 @@ def load_neuronexus(path):
     for sig in segment.analogsignals:
         name = getattr(sig, "name", "sig") or "sig"
         sfreqs.add(float(sig.sampling_rate.rescale(pq.Hz)))
-        if not _is_dimensionless(sig.units):
+
+        array_ann = getattr(sig, "array_annotations", {})
+        if "channel_names" in array_ann:
+            chs = array_ann["channel_names"].tolist()
+        else:
+            chs = [f"{name}-{i}" for i in range(sig.shape[1])]
+
+        channel_ids = None
+        for key in (
+            "channel_ids",
+            "channel_id",
+            "channel_indexes",
+            "channel_index",
+            "channel_indices",
+        ):
+            if key not in array_ann:
+                continue
+            candidate = array_ann[key]
+            if candidate is None:
+                continue
             try:
-                sig = sig.rescale(pq.V)
+                candidate_list = candidate.tolist()
+            except AttributeError:
+                try:
+                    candidate_list = list(candidate)
+                except TypeError:
+                    continue
+            try:
+                matches = len(candidate_list) == len(chs)
+            except TypeError:
+                continue
+            if not matches:
+                continue
+            channel_ids = candidate_list
+            break
+
+        stream_id = None
+        if hasattr(sig, "annotations"):
+            stream_id = sig.annotations.get("stream_id")
+
+        if remap_channels:
+            indices, mapped_names = apply_channel_remappers(
+                stream_id=stream_id,
+                signal_name=name,
+                channel_ids=channel_ids,
+                channel_names=chs,
+            )
+            if not mapped_names:
+                continue
+        else:
+            # No remapping - use channels as-is
+            indices = None
+            mapped_names = chs
+
+        is_dimensionless = _is_dimensionless(sig.units)
+        data_source = sig
+        if not is_dimensionless:
+            try:
+                data_source = sig.rescale(pq.V)
             except Exception:
                 # Keep native units; still viewable as misc
-                pass
-            data_list.append(sig.magnitude.T)
-            if "channel_names" in sig.array_annotations:
-                chs = sig.array_annotations["channel_names"].tolist()
-            else:
-                chs = [f"{name}-{i}" for i in range(sig.shape[1])]
-            ch_names.extend(chs)
-            if "Analog (pri)" in name or "pri" in name.lower():
-                ch_types.extend(["eeg"] * len(chs))
-            else:
-                ch_types.extend(["misc"] * len(chs))
+                data_source = sig
+
+        data_block = data_source.magnitude.T
+        if indices:
+            data_block = data_block[indices, :]
+
+        data_list.append(data_block)
+        ch_names.extend(mapped_names)
+
+        if is_dimensionless:
+            ch_types.extend(["stim"] * len(mapped_names))
         else:
-            data_list.append(sig.magnitude.T)
-            if "channel_names" in sig.array_annotations:
-                chs = sig.array_annotations["channel_names"].tolist()
+            stream_label = (stream_id or "").lower() if stream_id else ""
+            if stream_label == "ai-pri" or "analog (pri)" in name.lower() or "pri" in name.lower():
+                ch_types.extend(["eeg"] * len(mapped_names))
             else:
-                chs = [f"{name}-{i}" for i in range(sig.shape[1])]
-            ch_names.extend(chs)
-            ch_types.extend(["stim"] * len(chs))
+                ch_types.extend(["misc"] * len(mapped_names))
 
     if not data_list:
         raise RuntimeError("No compatible signals to build RawArray from NeuroNexus block")
