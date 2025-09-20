@@ -65,7 +65,7 @@ def validate_loader_output(eeg, file_path, ext):
     )
 
 
-def load_eeg_file(file_path):
+def load_eeg_file(file_path, **kwargs):
     """Load an EEG file and return an MNE Raw or Epochs object.
 
     Parameters
@@ -75,6 +75,8 @@ def load_eeg_file(file_path):
         ``.edf``, ``.bdf``, ``.vhdr`` (BrainVision), ``.fif`` (MNE), ``.raw``
         (EGI) and ``.gdf``. ``.mff`` files are also supported when the
         ``mne.io.read_raw_mff`` function is available.
+    **kwargs : dict
+        Additional keyword arguments passed to the loader (e.g., remap_channels for NeuroNexus).
 
     Returns
     -------
@@ -93,7 +95,14 @@ def load_eeg_file(file_path):
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    eeg = loaders.READERS[ext](file_path)
+    # Check if this is a NeuroNexus file to conditionally pass kwargs
+    loader_func = loaders.READERS[ext]
+    if ext in [".nnx", ".nex", ".xdat", ".xdat.json"]:
+        # NeuroNexus loader accepts extra kwargs
+        eeg = loader_func(file_path, **kwargs)
+    else:
+        # Other loaders don't accept extra kwargs
+        eeg = loader_func(file_path)
     eeg = validate_loader_output(eeg, file_path, ext)
     return eeg
 

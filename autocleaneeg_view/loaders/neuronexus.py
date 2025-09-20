@@ -48,13 +48,15 @@ def _derive_sidecar_json(p: Path) -> Path | None:
     return None
 
 
-def load_neuronexus(path):
+def load_neuronexus(path, remap_channels=False):
     """Load NeuroNexus data via Neo and return an MNE RawArray.
 
     Parameters
     ----------
     path : str | Path
         Path to a NeuroNexus recording.
+    remap_channels : bool, optional
+        Whether to apply channel remapping. Default is False.
     """
     pq, NeuroNexusIO = _require_neo()
 
@@ -133,15 +135,19 @@ def load_neuronexus(path):
         if hasattr(sig, "annotations"):
             stream_id = sig.annotations.get("stream_id")
 
-        indices, mapped_names = apply_channel_remappers(
-            stream_id=stream_id,
-            signal_name=name,
-            channel_ids=channel_ids,
-            channel_names=chs,
-        )
-
-        if not mapped_names:
-            continue
+        if remap_channels:
+            indices, mapped_names = apply_channel_remappers(
+                stream_id=stream_id,
+                signal_name=name,
+                channel_ids=channel_ids,
+                channel_names=chs,
+            )
+            if not mapped_names:
+                continue
+        else:
+            # No remapping - use channels as-is
+            indices = None
+            mapped_names = chs
 
         is_dimensionless = _is_dimensionless(sig.units)
         data_source = sig
