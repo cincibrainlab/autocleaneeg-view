@@ -25,6 +25,24 @@ def test_default_remap_maps_primary_channels_and_drops_unused():
     assert names == ["Ch 01", "Ch 02", "Ch 08"]
 
 
+def test_default_remap_maps_pri_style_primary_channels():
+    """pri_* style channels map sequentially and drop the hardware extras."""
+
+    channel_ids = [0, 1, 2, 30, 31]
+    channel_names = ["pri_0", "pri_1", "pri_2", "pri_30", "pri_31"]
+
+    indices, names = apply_channel_remappers(
+        stream_id="ai-pri",
+        signal_name="NeuroNexus Allego Analog (pri) Data",
+        channel_ids=channel_ids,
+        channel_names=channel_names,
+        remappers=[DEFAULT_ALLEGO_PRIMARY_REMAP],
+    )
+
+    assert indices == [0, 1, 2]
+    assert names == ["Ch 01", "Ch 02", "Ch 03"]
+
+
 def test_default_remap_infers_channel_ids_from_primary_names():
     """Channel IDs can be derived from Allego prXX names."""
 

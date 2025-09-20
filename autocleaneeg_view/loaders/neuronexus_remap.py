@@ -89,7 +89,11 @@ def _infer_ids_from_names(channel_names: Sequence[str]) -> RemapIds | None:
         match = _PR_CHANNEL_SUFFIX_RE.search(token)
         if match is None:
             return None
-        inferred.append(str(int(match.group(1))))
+        suffix = str(int(match.group(1)))
+        if low.startswith("pri"):
+            inferred.append(f"pri_{suffix}")
+        else:
+            inferred.append(suffix)
 
     return tuple(inferred)
 
@@ -184,14 +188,31 @@ class ChannelNameRemapper:
         drop_ids = set(self.drop_ids)
 
         for idx, (chan_id, fallback_name) in enumerate(zip(ids, channel_names)):
-            if chan_id in drop_ids:
+            alias = None
+            fallback_label = _coerce_to_str(fallback_name)
+            fallback_low = fallback_label.lower()
+            if fallback_low.startswith("pri"):
+                match = _PR_CHANNEL_SUFFIX_RE.search(fallback_label)
+                if match is not None:
+                    alias = f"pri_{int(match.group(1))}"
+
+            should_drop = False
+            if alias is not None:
+                should_drop = alias in drop_ids
+            else:
+                should_drop = chan_id in drop_ids
+            if should_drop:
                 continue
 
-            mapped = self.mapping.get(chan_id)
+            mapped = None
+            if alias is not None:
+                mapped = self.mapping.get(alias)
+            if mapped is None:
+                mapped = self.mapping.get(chan_id)
             if mapped is None:
                 if self.drop_missing:
                     continue
-                mapped = _coerce_to_str(fallback_name)
+                mapped = fallback_label
 
             keep.append(idx)
             names.append(mapped)
@@ -224,7 +245,6 @@ def apply_channel_remappers(
         if channel_ids is not None
         else None
     )
-
     candidates = remappers if remappers is not None else NEURONEXUS_CHANNEL_REMAPPERS
 
     for remapper in candidates:
@@ -244,50 +264,58 @@ def apply_channel_remappers(
     return indices, names
 
 
+_ALLEGO_PRIMARY_BASE_MAPPING = {
+    "30": "Ch 01",
+    "28": "Ch 02",
+    "26": "Ch 03",
+    "24": "Ch 04",
+    "22": "Ch 05",
+    "20": "Ch 06",
+    "18": "Ch 07",
+    "31": "Ch 08",
+    "29": "Ch 09",
+    "27": "Ch 10",
+    "25": "Ch 11",
+    "23": "Ch 12",
+    "21": "Ch 13",
+    "19": "Ch 14",
+    "17": "Ch 15",
+    "15": "Ch 16",
+    "13": "Ch 17",
+    "11": "Ch 18",
+    "9": "Ch 19",
+    "7": "Ch 20",
+    "5": "Ch 21",
+    "3": "Ch 22",
+    "1": "Ch 23",
+    "16": "Ch 24",
+    "14": "Ch 25",
+    "12": "Ch 26",
+    "10": "Ch 27",
+    "8": "Ch 28",
+    "6": "Ch 29",
+    "4": "Ch 30",
+}
+
+_ALLEGO_PRIMARY_PRI_MAPPING = {f"pri_{idx}": f"Ch {idx + 1:02d}" for idx in range(30)}
+
+_ALLEGO_PRIMARY_MAPPING = {
+    **_ALLEGO_PRIMARY_BASE_MAPPING,
+    **_ALLEGO_PRIMARY_PRI_MAPPING,
+}
+
+
 DEFAULT_ALLEGO_PRIMARY_REMAP = ChannelNameRemapper(
     label="allego_primary_30ch",
     description="Map Allego primary analog channel IDs to MEA labels (Ch 01–Ch 30)",
-    mapping={
-        "30": "Ch 01",
-        "28": "Ch 02",
-        "26": "Ch 03",
-        "24": "Ch 04",
-        "22": "Ch 05",
-        "20": "Ch 06",
-        "18": "Ch 07",
-        "31": "Ch 08",
-        "29": "Ch 09",
-        "27": "Ch 10",
-        "25": "Ch 11",
-        "23": "Ch 12",
-        "21": "Ch 13",
-        "19": "Ch 14",
-        "17": "Ch 15",
-        "15": "Ch 16",
-        "13": "Ch 17",
-        "11": "Ch 18",
-        "9": "Ch 19",
-        "7": "Ch 20",
-        "5": "Ch 21",
-        "3": "Ch 22",
-        "1": "Ch 23",
-        "16": "Ch 24",
-        "14": "Ch 25",
-        "12": "Ch 26",
-        "10": "Ch 27",
-        "8": "Ch 28",
-        "6": "Ch 29",
-        "4": "Ch 30",
-    },
+    mapping=_ALLEGO_PRIMARY_MAPPING,
     stream_ids=("ai-pri",),
     signal_name_substrings=("analog (pri)",),
-    drop_ids=("2", "32"),
+    drop_ids=("2", "32", "pri_2", "pri_30", "pri_31"),
 )
 
 
-NEURONEXUS_CHANNEL_REMAPPERS: list[ChannelNameRemapper] = [
-    DEFAULT_ALLEGO_PRIMARY_REMAP
-]
+NEURONEXUS_CHANNEL_REMAPPERS: list[ChannelNameRemapper] = [DEFAULT_ALLEGO_PRIMARY_REMAP]
 
 
 __all__ = [
@@ -298,4 +326,3 @@ __all__ = [
     "RemapIds",
     "apply_channel_remappers",
 ]
-
